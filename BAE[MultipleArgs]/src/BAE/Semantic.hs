@@ -52,19 +52,17 @@ module BAE.Semantic where
       Eq e1 e2 -> let e1' = eval1 e1 in Eq e1' e2
       If (B q) e1 e2 -> if q then e1 else e2
       If e1 e2 e3 -> If (eval1 e1) e2 e3
-      Let i (I n) e2 -> subst e2 (i, (I n))
-      Let i (B p) e2 -> subst e2 (i, (B p))
-      Let i e1 e2 -> Let i (eval1 e1) e2
-      Fn x e1 ->  Fn x (evals e1')
-      App f@(Fn x e1) e2 -> 
-        if e2 blocked 
-          then subst e1 (x, e2)
-          else App f (eval1 e2)
-      App e1 e2 -> 
+      Let i e1 e2 -> 
         if blocked e1
-          then App e1 (eval1 e2)
-          else App (eval1 e1) e2
-          
+          then subst e2 (i, e1)
+          else Let i (eval1 e1) e2
+      Fn x e1 ->  Fn x (eval1 e1)
+      App f@(Fn x e3) e2 -> 
+        if blocked e2
+          then subst e3 (x, e2)
+          else App f (eval1 e2)
+      App e1 e2 -> App (eval1 e1) e2
+        
 
   blocked :: Expr -> Bool
   blocked expr =
@@ -102,14 +100,17 @@ module BAE.Semantic where
       Eq e1 e2 -> blocked e1
       If (B q) e1 e2 -> False
       If e1 e2 e3 -> blocked e1
-      Let i (I n) e2 -> False
-      Let i (B p) e2 -> False
-      Let i e1 e2 -> blocked e1
-      Fn i e -> blocked e1
+      Let i e1 e2 -> False
+      Fn i e1 -> blocked e1
       App e1 e2 -> 
         if blocked e1
-          then blocked e2
-          else True
+          then 
+            if blocked e2
+              then case e1 of
+                Fn _ _ -> False
+                _ -> True
+              else False
+          else False
 
   evals :: Expr -> Expr
   evals expr =
