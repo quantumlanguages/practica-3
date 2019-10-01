@@ -141,5 +141,5 @@ module BAE.Sintax where
                 if x == y || elem x (frVars e')
                     then st (alphaExpr ex)
                     else Fn x (st e)
-            (App e f) -> Or (st e) (st f)
+            (App e f) -> App (st e) (st f)
         where st = (flip subst) s
