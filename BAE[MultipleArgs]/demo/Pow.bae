@@ -1,0 +1,3 @@
+let pow := recurFn pow [x y] => if (y = 0) then 1 else x * (pow $ x $ (pred y)) in
+  pow $ 3 $ 6
+end :: Integer
