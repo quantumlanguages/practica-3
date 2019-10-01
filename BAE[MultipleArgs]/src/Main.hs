@@ -6,8 +6,28 @@ import System.Environment
 
 -- Combinador Y
 fix :: Sintax.Expr
-fix = Fn "f" (App r r) 
-        where r = (Fn "x" App (V "f") (App (V "x") V ("x")))
+fix = Sintax.Fn "f" (Sintax.App r r) 
+        where r = (Sintax.Fn "x" 
+                    (Sintax.App 
+                      (Sintax.V "f") 
+                      (Sintax.App 
+                        (Sintax.V "x") 
+                        (Sintax.V "x")
+                      )
+                    )
+                  )
+
+currying :: Parser.Expr -> Sintax.Expr
+currying e = 
+  case e of
+    Parser.Fn ids e1 -> buildCurry ids e1
+    _ -> parserExprToExpr e
+
+buildCurry :: [String] -> Parser.Expr -> Sintax.Expr
+buildCurry ids e = 
+  case ids of
+    [] -> parserExprToExpr e
+    (x:xs) -> Sintax.Fn x (buildCurry xs e)
 
 parserExprToExpr :: Parser.Expr -> Sintax.Expr
 parserExprToExpr (Parser.V n) = Sintax.V n
@@ -20,12 +40,14 @@ parserExprToExpr (BinaryE Parser.And e1 e2) = Sintax.And (parserExprToExpr e1) (
 parserExprToExpr (BinaryE Parser.Or e1 e2) = Sintax.Or (parserExprToExpr e1) (parserExprToExpr e2)
 parserExprToExpr (BinaryE Parser.Add e1 e2) = Sintax.Add (parserExprToExpr e1) (parserExprToExpr e2)
 parserExprToExpr (BinaryE Parser.Mul e1 e2) = Sintax.Mul (parserExprToExpr e1) (parserExprToExpr e2)
+parserExprToExpr (BinaryE Parser.App e1 e2) = Sintax.App (parserExprToExpr e1) (parserExprToExpr e2)
 parserExprToExpr (RelationalE Parser.Gt e1 e2) = Sintax.Gt (parserExprToExpr e1) (parserExprToExpr e2)
 parserExprToExpr (RelationalE Parser.Lt e1 e2) = Sintax.Lt (parserExprToExpr e1) (parserExprToExpr e2)
 parserExprToExpr (RelationalE Parser.Eq e1 e2) = Sintax.Eq (parserExprToExpr e1) (parserExprToExpr e2)
 parserExprToExpr (Parser.If e1 e2 e3) = Sintax.If (parserExprToExpr e1) (parserExprToExpr e2) (parserExprToExpr e3)
 parserExprToExpr (Parser.Let x e1 e2) = Sintax.Let x (parserExprToExpr e1) (parserExprToExpr e2)
-parserExprToExpr (Parser.RecurFn f x e) = Sintax.App fix (Fun f (Fnx x e))
+parserExprToExpr (Parser.Fn args e) = buildCurry args e
+parserExprToExpr (Parser.RecurFn f args e) = Sintax.App fix (Sintax.Fn f (buildCurry args e))
 
 parserTypeToType :: Parser.Type -> Semantic.Type
 parserTypeToType (Parser.Integer) = Semantic.Integer
