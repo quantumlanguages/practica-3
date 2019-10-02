@@ -1,0 +1,9 @@
+// Good example
+let x1 := (1 + 2) * (succ (pred 10)) in
+    let y := 1 = 1 in
+      if true & (x1 > -4) | false then
+        not y | (x1 < 31)
+      else
+        x1 < -4
+    end
+end :: Boolean
